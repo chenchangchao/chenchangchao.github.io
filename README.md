@@ -2,6 +2,10 @@
 
 ```sh
 bun create astro@latest -- --template blog
+git add .
+git commit -m "Initial commit"
+git push -u origin main
+git push
 ```
 
 > 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!

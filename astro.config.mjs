@@ -7,6 +7,13 @@ import { defineConfig, fontProviders } from 'astro/config';
 // https://astro.build/config
 export default defineConfig({
 	site: 'https://chenchangchao.github.io',
+	i18n: {
+		locales: ['zh-Hans', 'en-US'],
+		defaultLocale: 'zh-Hans',
+		routing: {
+			prefixDefaultLocale: false,
+		},
+	},
 	integrations: [mdx(), sitemap()],
 	fonts: [
 		{

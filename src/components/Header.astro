@@ -1,15 +1,16 @@
 ---
-import { SITE_TITLE } from '../consts';
+import { DEFAULT_LOCALE, NAV, SITE, type Locale, localizedPath, switchLocalePath, } from '../consts';
 import HeaderLink from './HeaderLink.astro';
+interface Props { locale?: Locale; } const locale = Astro.props.locale ?? DEFAULT_LOCALE; const nav = NAV[locale]; const site = SITE[locale]; const targetLocale: Locale = locale === 'zh-Hans' ? 'en-US' : 'zh-Hans'; const languageSwitchHref = switchLocalePath(targetLocale, Astro.url.pathname);
 ---
 
 <header>
 	<nav>
-		<h2><a href="/">{SITE_TITLE}</a></h2>
+		<a href={localizedPath(locale, '/')}>{site.title}</a>
 		<div class="internal-links">
-			<HeaderLink href="/">Home</HeaderLink>
-			<HeaderLink href="/blog">Blog</HeaderLink>
-			<HeaderLink href="/about">About</HeaderLink>
+			<HeaderLink href={localizedPath(locale, '/')}>{nav.home}</HeaderLink>
+			<HeaderLink href={localizedPath(locale, '/blog')}>{nav.blog}</HeaderLink>
+			<HeaderLink href={localizedPath(locale, '/about')}>{nav.about}</HeaderLink>
 		</div>
 		<div class="social-links">
 			<a href="https://m.webtoo.ls/@astro" target="_blank">
@@ -21,7 +22,7 @@ import HeaderLink from './HeaderLink.astro';
 					></path></svg
 				>
 			</a>
-			<a href="https://twitter.com/astrodotbuild" target="_blank">
+			<a href="https://x.com/galaxmilkway" target="_blank">
 				<span class="sr-only">Follow Astro on Twitter</span>
 				<svg viewBox="0 0 16 16" aria-hidden="true" width="32" height="32"
 					><path
@@ -30,7 +31,7 @@ import HeaderLink from './HeaderLink.astro';
 					></path></svg
 				>
 			</a>
-			<a href="https://github.com/withastro/astro" target="_blank">
+			<a href="https://github.com/chenchangchao/chenchangchao.github.io" target="_blank">
 				<span class="sr-only">Go to Astro's GitHub repo</span>
 				<svg viewBox="0 0 16 16" aria-hidden="true" width="32" height="32"
 					><path
