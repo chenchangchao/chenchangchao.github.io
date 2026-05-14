@@ -17,7 +17,20 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
 const { title, description, image = FallbackImage } = Astro.props;
 ---
+<script is:inline>
+	(() => {
+		const storageKey = 'site-theme';
+		const savedTheme = localStorage.getItem(storageKey) || 'system';
 
+		const getResolvedTheme = (theme) => {
+			if (theme === 'dark' || theme === 'light') return theme;
+			return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+		};
+
+		document.documentElement.dataset.themeMode = savedTheme;
+		document.documentElement.dataset.theme = getResolvedTheme(savedTheme);
+	})();
+</script>
 <!-- Global Metadata -->
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />

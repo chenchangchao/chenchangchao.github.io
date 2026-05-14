@@ -10,13 +10,13 @@ export type Locale = (typeof LOCALES)[number];
 export const SITE = {
 	'zh-Hans': {
 		title: '陈常超的技术博客',
-		description: '记录 AI Agent、数据分析、TypeScript 全栈、RAG、自动化报表和个人项目实践。',
+		description: '记录 AI Agent、RAG、TypeScript 全栈等个人项目实践。',
 		lang: 'zh-Hans',
 	},
 	'en-US': {
-		title: "Chen Changchao's Blog",
+		title: "Chen Changchao's Tech Blog",
 		description:
-			'Notes on AI agents, data analytics, TypeScript full-stack development, RAG, automation, and personal projects.',
+			'Notes on AI agents, RAG, TypeScript full-stack development, and related personal projects.',
 		lang: 'en-US',
 	},
 } satisfies Record<
