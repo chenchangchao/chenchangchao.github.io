@@ -1,0 +1,237 @@
+---
+// src/components/ChatWidget.astro
+---
+
+<div id="ai-chat-widget" class="chat-widget">
+  <div id="chat-window" class="chat-window hidden">
+    <div class="chat-header">
+      <span>🤖 超哥的 AI 助手</span>
+      <button id="close-chat" class="close-btn">&times;</button>
+    </div>
+    <div id="chat-messages" class="chat-messages">
+      <div class="message bot">
+        <div class="bubble">
+          你好！我是超哥博客的 AI 助手，有什么我可以帮你的吗？
+        </div>
+      </div>
+    </div>
+    <form id="chat-form" class="chat-input-area">
+      <input
+        type="text"
+        id="chat-input"
+        placeholder="问我关于向量数据库或RAG的问题..."
+        autocomplete="off"
+        required
+      />
+      <button type="submit">发送</button>
+    </form>
+  </div>
+
+  <button id="chat-trigger" class="chat-trigger"> 💬 AI 问答 </button>
+</div>
+
+<style>
+  /* 基础 UI 样式 (原汁原味的 CSS，不依赖 Tailwind) */
+  .chat-widget {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 9999;
+    font-family:
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      Roboto,
+      sans-serif;
+  }
+
+  .chat-trigger {
+    background: #000;
+    color: #fff;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 30px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: transform 0.2s;
+  }
+  .chat-trigger:hover {
+    transform: scale(1.05);
+  }
+
+  .chat-window {
+    position: absolute;
+    bottom: 60px;
+    right: 0;
+    width: 320px;
+    height: 400px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition:
+      opacity 0.3s,
+      transform 0.3s;
+    transform-origin: bottom right;
+  }
+  .chat-window.hidden {
+    opacity: 0;
+    transform: scale(0.8);
+    pointer-events: none;
+  }
+
+  .chat-header {
+    background: #f4f4f5;
+    padding: 12px 16px;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e4e4e7;
+  }
+  .close-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #71717a;
+  }
+
+  .chat-messages {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: #fafafa;
+  }
+
+  .message {
+    display: flex;
+  }
+  .message.user {
+    justify-content: flex-end;
+  }
+  .bubble {
+    max-width: 80%;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .message.bot .bubble {
+    background: #e4e4e7;
+    color: #18181b;
+  }
+  .message.user .bubble {
+    background: #000;
+    color: #fff;
+  }
+
+  .chat-input-area {
+    display: flex;
+    padding: 12px;
+    border-top: 1px solid #e4e4e7;
+    background: #fff;
+  }
+  .chat-input-area input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #d4d4d8;
+    border-radius: 4px;
+    outline: none;
+  }
+  .chat-input-area input:focus {
+    border-color: #000;
+  }
+  .chat-input-area button {
+    margin-left: 8px;
+    background: #000;
+    color: #fff;
+    border: none;
+    padding: 0 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+</style>
+
+<script>
+  // 客户端交互逻辑
+  document.addEventListener("DOMContentLoaded", () => {
+    const trigger = document.getElementById("chat-trigger");
+    const windowEl = document.getElementById("chat-window");
+    const closeBtn = document.getElementById("close-chat");
+    const form = document.getElementById("chat-form");
+    const input = document.getElementById("chat-input");
+    const messagesEl = document.getElementById("chat-messages");
+
+    if (
+      !(trigger instanceof HTMLButtonElement) ||
+      !(windowEl instanceof HTMLElement) ||
+      !(closeBtn instanceof HTMLButtonElement) ||
+      !(form instanceof HTMLFormElement) ||
+      !(input instanceof HTMLInputElement) ||
+      !(messagesEl instanceof HTMLElement)
+    ) {
+      return;
+    }
+    // 切换窗口显示/隐藏
+    const toggleChat = () => windowEl.classList.toggle("hidden");
+    trigger.addEventListener("click", toggleChat);
+    closeBtn.addEventListener("click", toggleChat);
+
+    // 添加消息到界面的工具函数
+    const appendMessage = (role: "user" | "bot", text: string) => {
+      const msgDiv = document.createElement("div");
+      msgDiv.className = `message ${role}`;
+      msgDiv.innerHTML = `<div class="bubble">${text}</div>`;
+      messagesEl.appendChild(msgDiv);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+      return msgDiv.querySelector(".bubble");
+    };
+
+    // 核心请求逻辑
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const text = input.value.trim();
+      if (!text) return;
+
+      // 1. 显示用户提问
+      appendMessage("user", text);
+      input.value = "";
+
+      // 2. 显示加载状态
+      const loadingBubble = appendMessage("bot", "正在大脑中检索知识库...");
+
+      try {
+        // 🌟 这里就是调用你刚刚打通的完美免备案内网穿透接口！
+        const response = await fetch("https://api.chenchangchao.com/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: text }),
+        });
+
+        if (!response.ok) throw new Error("Network response was not ok");
+
+        const data = await response.json();
+
+        // 3. 替换加载状态为真实回答
+        if (loadingBubble) {
+          loadingBubble.textContent = data.reply || "抱歉，我的大脑好像卡壳了。";
+        }
+      } catch (error) {
+        console.error("Chat API Error:", error);
+        if (loadingBubble) {
+          loadingBubble.textContent = "网络请求失败，请检查接口是否在线。";
+        }
+      }
+    });
+  });
+</script>
