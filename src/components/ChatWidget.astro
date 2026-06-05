@@ -51,7 +51,7 @@ const t = {
   </div>
 
   <button id="chat-trigger" class="chat-trigger">
-    💬 {currentLang === "en" ? "AI Chat" : "AI 问答"}
+    💬 {currentLang === "en" ? "AI Helper" : "AI 小助手"}
   </button>
 </div>
 
@@ -207,65 +207,108 @@ const t = {
 </style>
 
 <script>
-  document.addEventListener("DOMContentLoaded", () => {
-    const widget = document.getElementById("ai-chat-widget");
+  document.addEventListener('DOMContentLoaded', () => {
+    const widget = document.getElementById('ai-chat-widget');
     if (!widget) return;
+    
+    const lang = widget.dataset.lang || 'zh';
+    const trigger = document.getElementById('chat-trigger');
+    const windowEl = document.getElementById('chat-window');
+    const closeBtn = document.getElementById('close-chat');
+    const form = document.getElementById('chat-form');
+    const input = document.getElementById('chat-input');
+    const messagesEl = document.getElementById('chat-messages');
 
-    // 从 data 属性中动态获取当前语言状态 ('zh' 或 'en')
-    const lang = widget.dataset.lang || "zh";
+    if (
+      !(trigger instanceof HTMLButtonElement) ||
+      !(windowEl instanceof HTMLElement) ||
+      !(closeBtn instanceof HTMLButtonElement) ||
+      !(form instanceof HTMLFormElement) ||
+      !(input instanceof HTMLInputElement) ||
+      !(messagesEl instanceof HTMLElement)
+    ) {
+      return;
+    }
 
-    const trigger = document.getElementById("chat-trigger");
-    const windowEl = document.getElementById("chat-window");
-    const closeBtn = document.getElementById("close-chat");
-    const form = document.getElementById("chat-form");
-    const input = document.getElementById("chat-input") as HTMLInputElement;
-    const messagesEl = document.getElementById("chat-messages");
+    const toggleChat = () => windowEl.classList.toggle('hidden');
+    trigger.addEventListener('click', toggleChat);
+    closeBtn.addEventListener('click', toggleChat);
 
-    const toggleChat = () => windowEl.classList.toggle("hidden");
-    trigger.addEventListener("click", toggleChat);
-    closeBtn.addEventListener("click", toggleChat);
-
-    const appendMessage = (role: "user" | "bot", text: string) => {
-      const msgDiv = document.createElement("div");
+    const appendMessage = (role: 'user' | 'bot', text: string) => {
+      const msgDiv = document.createElement('div');
       msgDiv.className = `message ${role}`;
-      msgDiv.innerHTML = `<div class="bubble">${text}</div>`;
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      bubble.textContent = text;
+      msgDiv.appendChild(bubble);
       messagesEl.appendChild(msgDiv);
       messagesEl.scrollTop = messagesEl.scrollHeight;
       return msgDiv;
     };
 
-    form.addEventListener("submit", async (e) => {
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const text = input.value.trim();
       if (!text) return;
 
-      appendMessage("user", text);
-      input.value = "";
+      appendMessage('user', text);
+      input.value = '';
 
-      const loadingText =
-        lang === "en" ? "Thinking..." : "正在大脑中检索知识库...";
-      const errorText =
-        lang === "en"
-          ? "API Error, please try again."
-          : "网络请求失败，请检查接口是否在线。";
+      const loadingText = lang === 'en' ? 'Thinking...' : '正在思考...';
+      const errorText = lang === 'en' ? 'API Error, please try again.' : '网络请求失败，请检查接口是否在线。';
 
-      const loadingMsg = appendMessage("bot", loadingText);
+      // 先渲染一个占位的气泡
+      const botMsgWrapper = appendMessage('bot', loadingText);
+      const bubbleEl = botMsgWrapper.querySelector('.bubble');
+      if (!(bubbleEl instanceof HTMLElement)) return;
 
       try {
-        // 🌟 发送请求时，把当前语言环境 lang 一并作为参数推送给后端
-        const response = await fetch("https://api.chenchangchao.com/api/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: text, lang: lang }),
+        // 请求甲骨文后端的 HTTPS 代理地址 (如果你用了方案A，URL不用变)
+        const response = await fetch('https://api.chenchangchao.com/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          // 🌟 开启后端流式输出
+          body: JSON.stringify({ message: text, lang: lang, stream: true })
         });
 
-        if (!response.ok) throw new Error("Network error");
-        const data = await response.json();
+        if (!response.ok) throw new Error('Network error');
+        if (!response.body) throw new Error('Empty response body');
 
-        loadingMsg.querySelector(".bubble").textContent = data.reply;
+        // 🌟 核心：解析流式数据 (SSE) 实现打字机效果
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let fullReply = '';
+        bubbleEl.textContent = ''; // 清除“正在思考...”状态
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n');
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const dataStr = line.substring(6).trim();
+              if (dataStr === '[DONE]') break; // 结束标志
+              
+              try {
+                const data = JSON.parse(dataStr);
+                if (data.content) {
+                  fullReply += data.content;
+                  bubbleEl.textContent = fullReply; // 实时更新气泡文字
+                  // 确保滚动条始终在最底部
+                  messagesEl.scrollTop = messagesEl.scrollHeight;
+                }
+              } catch (parseError) {
+                // 忽略不完整的 JSON 块解析错误
+              }
+            }
+          }
+        }
       } catch (error) {
         console.error(error);
-        loadingMsg.querySelector(".bubble").textContent = errorText;
+        bubbleEl.textContent = errorText;
       }
     });
   });
