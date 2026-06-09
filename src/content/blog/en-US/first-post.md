@@ -1,17 +1,17 @@
 ---
-title: "我的个人技术博客正式上线"
-description: "记录我从数据分析转向 AI Agent 应用开发、全栈开发和自动化分析的过程。"
+title: "My Personal Tech Blog Is Live"
+description: "Notes on my path from data analytics toward AI Agent development, full-stack engineering, and automated analysis."
 pubDate: 2026-05-13
-tags: ["GitHub Pages", "Astro", "技术博客"]
+tags: ["GitHub Pages", "Astro", "Tech Blog"]
 ---
 
-今天开始，我会把自己的技术学习、项目实践、踩坑记录整理到这个博客里。
+Starting today, I will use this blog to organize my technical learning, project notes, and implementation retrospectives.
 
-后续主要内容包括：
+Topics I plan to write about:
 
-- AI Agent 应用开发
-- TypeScript 全栈项目
+- AI Agent application development
+- TypeScript full-stack projects
 - PostgreSQL / RAG / pgvector
-- Amazon 评论分析与竞品分析
-- 自动化数据报表
-- 个人网站建设记录
+- Amazon review analysis and competitor research
+- Automated data reporting
+- Notes on building this personal website

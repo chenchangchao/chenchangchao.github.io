@@ -59,11 +59,25 @@ export function isLocale(value: string): value is Locale {
 	return LOCALES.includes(value as Locale);
 }
 
+export function normalizeLocale(value: string): Locale | null {
+	const normalized = value.toLowerCase();
+
+	if (normalized === 'zh-hans') {
+		return 'zh-Hans';
+	}
+
+	if (normalized === 'en-us') {
+		return 'en-US';
+	}
+
+	return null;
+}
+
 export function getLocaleFromPathname(pathname: string): Locale {
 	const firstSegment = pathname.split('/').filter(Boolean)[0];
 
-	if (firstSegment && isLocale(firstSegment)) {
-		return firstSegment;
+	if (firstSegment) {
+		return normalizeLocale(firstSegment) ?? DEFAULT_LOCALE;
 	}
 
 	return DEFAULT_LOCALE;
@@ -73,7 +87,7 @@ export function removeLocalePrefix(pathname: string) {
 	const segments = pathname.split('/').filter(Boolean);
 	const firstSegment = segments[0];
 
-	if (firstSegment && isLocale(firstSegment)) {
+	if (firstSegment && normalizeLocale(firstSegment)) {
 		const rest = segments.slice(1).join('/');
 		return rest ? `/${rest}/` : '/';
 	}
@@ -97,9 +111,10 @@ export function localizedPath(locale: Locale, path = '/') {
 
 export function getPostLocale(postId: string): Locale {
 	const firstSegment = postId.split('/')[0];
+	const locale = normalizeLocale(firstSegment);
 
-	if (isLocale(firstSegment)) {
-		return firstSegment;
+	if (locale) {
+		return locale;
 	}
 
 	return DEFAULT_LOCALE;
@@ -108,7 +123,7 @@ export function getPostLocale(postId: string): Locale {
 export function getPostSlug(postId: string) {
 	const segments = postId.split('/');
 
-	if (isLocale(segments[0])) {
+	if (normalizeLocale(segments[0])) {
 		return segments.slice(1).join('/');
 	}
 

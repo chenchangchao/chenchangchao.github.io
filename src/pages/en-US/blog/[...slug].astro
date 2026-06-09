@@ -1,12 +1,12 @@
 ---
 import { type CollectionEntry, getCollection, render } from 'astro:content';
-import BlogPost from '../../layouts/BlogPost.astro';
-import { getPostLocale, getPostSlug } from '../../consts';
+import BlogPost from '../../../layouts/BlogPost.astro';
+import { getPostLocale, getPostSlug } from '../../../consts';
 
 export async function getStaticPaths() {
 	const posts = await getCollection('blog');
 	return posts
-		.filter((post) => getPostLocale(post.id) === 'zh-Hans' && post.id.toLowerCase().startsWith('zh-hans/'))
+		.filter((post) => getPostLocale(post.id) === 'en-US')
 		.map((post) => ({
 			params: { slug: getPostSlug(post.id) },
 			props: post,
