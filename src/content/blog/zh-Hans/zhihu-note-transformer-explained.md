@@ -1,8 +1,8 @@
 ---
 title: "知乎笔记｜transformer架构的核心公式其实类似于数学期望，理解起来也不复杂，但为什么这个模型这么强呢？"
-description: "记录我从数据分析转向 AI Agent 应用开发、全栈开发和自动化分析的过程。"
-pubDate: 2026-05-13
-tags: ["GitHub Pages", "Astro", "技术博客"]
+description: "来自作者CodeCrafter的知乎笔记，侵删"
+pubDate: 2026-06-01
+tags: ["transformer", "NLP", "Attention","知乎","笔记"]
 ---
 
 - 作者：CodeCrafter,侵删

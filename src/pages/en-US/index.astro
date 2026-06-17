@@ -1,11 +1,38 @@
 ---
 import BaseHead from '../../components/BaseHead.astro';
 import Footer from '../../components/Footer.astro';
+import FormattedDate from '../../components/FormattedDate.astro';
 import Header from '../../components/Header.astro';
-import { SITE } from '../../consts';
+import { getCollection } from 'astro:content';
+import { getPostHref, getPostLocale, SITE } from '../../consts';
 
 const locale = 'en-US';
 const meta = SITE[locale];
+const recentPosts = (await getCollection('blog'))
+	.filter((post) => getPostLocale(post.id) === locale)
+	.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+	.slice(0, 5);
+
+const featured = [
+	{
+		title: 'AI Agent Development',
+		description:
+			'Reusable engineering patterns around tool use, memory, planning, and local runtimes.',
+		href: '/en-US/blog/agent-runtime-local-tools/',
+	},
+	{
+		title: 'MCP Server Builds',
+		description:
+			'Practical notes on protocol design, resources, tools, and real Model Context Protocol workflows.',
+		href: '/en-US/blog/mcp-started/',
+	},
+	{
+		title: 'Data Automation Engine',
+		description:
+			'Data engineering practice for ingestion, cleaning, scheduling, monitoring, and reporting.',
+		href: '/en-US/blog/agent-service-hardening/',
+	},
+];
 ---
 
 <!doctype html>
@@ -15,23 +42,220 @@ const meta = SITE[locale];
 	</head>
 	<body>
 		<Header locale={locale} />
-		<main>
-			<h1>Chen Changchao's Blog</h1>
+		<main class="home" data-pagefind-body>
+			<section class="hero">
+				<p class="eyebrow">Hardcore technical notes</p>
+				<h1>Chen Changchao's Blog</h1>
+				<p class="lead">
+					I write about AI agents, data analytics, TypeScript full-stack development,
+					RAG, automation, and practical engineering notes from real projects.
+				</p>
+				<div class="hero-actions">
+					<a class="primary-link" href="/en-US/blog/">Read blog posts</a>
+					<a class="secondary-link" href="/en-US/about/">View tech stack</a>
+				</div>
+			</section>
 
-			<p>
-				I write about AI agents, data analytics, TypeScript full-stack development,
-				RAG, automation, and practical engineering notes from real projects.
-			</p>
+			<section class="section-block" aria-labelledby="recent-posts">
+				<div class="section-heading">
+					<h2 id="recent-posts">Recent Posts</h2>
+					<a href="/en-US/blog/">All posts</a>
+				</div>
+				<div class="recent-list">
+					{
+						recentPosts.map((post) => (
+							<a class="recent-item" href={getPostHref(locale, post.id)}>
+								<p class="date">
+									<FormattedDate date={post.data.pubDate} />
+								</p>
+								<h3>{post.data.title}</h3>
+								<p>{post.data.description}</p>
+							</a>
+						))
+					}
+				</div>
+			</section>
 
-			<p>
-				This site is my long-term archive for technical learning, project experience,
-				and problem-solving notes.
-			</p>
-
-			<p>
-				<a href="/en-US/blog/">Read blog posts →</a>
-			</p>
+			<section class="section-block" aria-labelledby="featured-work">
+				<div class="section-heading">
+					<h2 id="featured-work">Featured</h2>
+				</div>
+				<div class="featured-grid">
+					{
+						featured.map((item) => (
+							<a class="featured-card" href={item.href}>
+								<h3>{item.title}</h3>
+								<p>{item.description}</p>
+							</a>
+						))
+					}
+				</div>
+			</section>
 		</main>
 		<Footer />
 	</body>
 </html>
+
+<style>
+	.home {
+		width: min(var(--container-wide), calc(100% - 2rem));
+	}
+
+	.hero {
+		max-width: 760px;
+		padding-bottom: 4rem;
+	}
+
+	.eyebrow {
+		margin-bottom: 0.8rem;
+		color: var(--muted-color);
+		font-size: 0.82rem;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+
+	.lead {
+		max-width: 46rem;
+		color: var(--muted-color);
+		font-size: 1.15rem;
+	}
+
+	.hero-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.8rem;
+		margin-top: 2rem;
+	}
+
+	.primary-link,
+	.secondary-link {
+		display: inline-flex;
+		align-items: center;
+		min-height: 42px;
+		padding: 0 1rem;
+		border: 1px solid var(--border-color);
+		border-radius: 8px;
+		font-size: 0.95rem;
+		font-weight: 700;
+	}
+
+	.primary-link {
+		background: var(--heading-color);
+		color: var(--page-bg);
+		border-color: var(--heading-color);
+	}
+
+	.primary-link:hover {
+		color: var(--page-bg);
+		opacity: 0.84;
+	}
+
+	.secondary-link {
+		color: var(--text-color);
+		background: var(--surface-bg);
+	}
+
+	.section-block {
+		padding: 3rem 0;
+		border-top: 1px solid var(--border-color);
+	}
+
+	.section-heading {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 1rem;
+		margin-bottom: 1.5rem;
+	}
+
+	.section-heading h2 {
+		margin: 0;
+		font-size: 1.35rem;
+	}
+
+	.section-heading a {
+		font-size: 0.9rem;
+		font-weight: 700;
+	}
+
+	.recent-list {
+		display: grid;
+		gap: 0;
+	}
+
+	.recent-item {
+		display: grid;
+		gap: 0.5rem;
+		padding: 1.25rem 0;
+		border-top: 1px solid var(--border-color);
+		color: inherit;
+	}
+
+	.recent-item:first-child {
+		border-top: 0;
+	}
+
+	.recent-item:hover h3 {
+		color: var(--accent);
+	}
+
+	.recent-item .date {
+		margin: 0;
+		color: var(--muted-color);
+		font-size: 0.88rem;
+	}
+
+	.recent-item h3,
+	.featured-card h3 {
+		margin: 0;
+		color: var(--heading-color);
+		font-size: 1.15rem;
+		line-height: 1.35;
+	}
+
+	.recent-item p,
+	.featured-card p {
+		margin: 0;
+		color: var(--muted-color);
+		font-size: 0.98rem;
+		line-height: 1.7;
+	}
+
+	.featured-grid {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 1rem;
+	}
+
+	.featured-card {
+		display: grid;
+		align-content: start;
+		gap: 0.8rem;
+		min-height: 190px;
+		padding: 1.25rem;
+		border: 1px solid var(--border-color);
+		border-radius: 8px;
+		background: var(--surface-bg);
+		color: inherit;
+	}
+
+	.featured-card:hover {
+		border-color: var(--accent);
+		transform: translateY(-2px);
+	}
+
+	@media (max-width: 780px) {
+		.home {
+			width: min(var(--container-wide), calc(100% - 1.5rem));
+		}
+
+		.hero {
+			padding-bottom: 3rem;
+		}
+
+		.featured-grid {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>

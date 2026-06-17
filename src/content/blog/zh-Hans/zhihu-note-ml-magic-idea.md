@@ -1,8 +1,8 @@
 ---
 title: "知乎笔记｜机器学习中有哪些形式简单却很巧妙的idea？"
-description: "记录我从数据分析转向 AI Agent 应用开发、全栈开发和自动化分析的过程。"
-pubDate: 2026-05-13
-tags: ["GitHub Pages", "Astro", "技术博客"]
+description: "来自作者bigpunch的知乎笔记，侵删"
+pubDate: 2026-06-04
+tags: ["机器学习", "深度学习", "神经网络", "Dropout", "ResNet", "Attention"]
 ---
 - 作者：bigpunch，侵删。
 - 链接：https://www.zhihu.com/question/347847220/answer/1990355161588196381

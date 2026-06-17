@@ -20,91 +20,118 @@ const posts = (await getCollection('blog'))
 		<BaseHead title={`博客 - ${meta.title}`} description={meta.description} />
 		<style>
 			main {
-				width: 960px;
+				width: min(var(--container-wide), calc(100% - 2rem));
 			}
-			ul {
+			.blog-header {
+				margin-bottom: 3.5rem;
+			}
+			.blog-header p {
+				max-width: 42rem;
+				color: var(--muted-color);
+			}
+			.post-list {
 				display: flex;
-				flex-wrap: wrap;
-				gap: 2rem;
+				flex-direction: column;
+				gap: 2.75rem;
 				list-style-type: none;
 				margin: 0;
 				padding: 0;
 			}
-			ul li {
-				width: calc(50% - 1rem);
+			.post-card {
+				padding-bottom: 2.75rem;
+				border-bottom: 1px solid var(--border-color);
 			}
-			ul li * {
+			.post-link {
+				display: grid;
+				grid-template-columns: minmax(0, 1fr) 168px;
+				gap: 1.5rem;
+				align-items: start;
+				color: inherit;
 				text-decoration: none;
-				transition: 0.2s ease;
 			}
-			ul li:first-child {
-				width: 100%;
-				margin-bottom: 1rem;
-				text-align: center;
-			}
-			ul li:first-child img {
-				width: 100%;
-			}
-			ul li:first-child .title {
-				font-size: 2.369rem;
-			}
-			ul li img {
-				margin-bottom: 0.5rem;
-				border-radius: 12px;
-			}
-			ul li a {
-				display: block;
-			}
-			.title {
-				margin: 0;
-				color: rgb(var(--black));
-				line-height: 1;
+			.post-content {
+				min-width: 0;
 			}
 			.date {
 				margin: 0;
-				color: rgb(var(--gray));
+				color: var(--muted-color);
+				font-size: 0.9rem;
+				line-height: 1.4;
 			}
-			ul li a:hover h4,
-			ul li a:hover .date {
-				color: rgb(var(--accent));
+			.title {
+				margin: 0.7rem 0 0.9rem;
+				color: var(--heading-color);
+				font-size: clamp(1.35rem, 3vw, 1.75rem);
+				line-height: 1.25;
 			}
-			ul a:hover img {
-				box-shadow: var(--box-shadow);
+			.description {
+				margin: 0;
+				color: var(--muted-color);
+				font-size: 1rem;
+				line-height: 1.75;
 			}
-			@media (max-width: 720px) {
-				ul {
-					gap: 0.5em;
+			.post-link:hover .title {
+				color: var(--accent);
+			}
+			.post-link:hover img {
+				border-color: var(--accent);
+				transform: translateY(-2px);
+			}
+			.post-link img {
+				width: 168px;
+				aspect-ratio: 4 / 3;
+				object-fit: cover;
+				border: 1px solid var(--border-color);
+				border-radius: 8px;
+				transition:
+					border-color 180ms ease,
+					transform 180ms ease;
+			}
+			@media (max-width: 680px) {
+				main {
+					width: min(var(--container-wide), calc(100% - 1.5rem));
 				}
-				ul li {
+				.blog-header {
+					margin-bottom: 2.5rem;
+				}
+				.post-list {
+					gap: 2.25rem;
+				}
+				.post-card {
+					padding-bottom: 2.25rem;
+				}
+				.post-link {
+					grid-template-columns: 1fr;
+				}
+				.post-link img {
 					width: 100%;
-					text-align: center;
-				}
-				ul li:first-child {
-					margin-bottom: 0;
-				}
-				ul li:first-child .title {
-					font-size: 1.563em;
+					aspect-ratio: 16 / 9;
+					order: -1;
 				}
 			}
 		</style>
 	</head>
 	<body>
 		<Header locale={locale} />
-		<main>
-			<h1>博客</h1>
+		<main data-pagefind-body>
+			<div class="blog-header">
+				<h1>博客</h1>
+				<p>AI Agent、RAG、TypeScript 全栈开发和工程实践的长期笔记。</p>
+			</div>
 			<section>
-				<ul>
+				<ul class="post-list">
 					{
 						posts.map((post) => (
-							<li>
-								<a href={getPostHref(locale, post.id)}>
-									{post.data.heroImage && (
-										<Image width={720} height={360} src={post.data.heroImage} alt="" />
-									)}
-									<h4 class="title">{post.data.title}</h4>
-									<p class="date">
-										<FormattedDate date={post.data.pubDate} />
-									</p>
+							<li class="post-card">
+								<a class="post-link" href={getPostHref(locale, post.id)}>
+									<div class="post-content">
+										<p class="date">
+											<FormattedDate date={post.data.pubDate} />
+										</p>
+										<h2 class="title">{post.data.title}</h2>
+										<p class="description">{post.data.description}</p>
+									</div>
+									{post.data.heroImage && <Image width={336} height={252} src={post.data.heroImage} alt="" />}
 								</a>
 							</li>
 						))

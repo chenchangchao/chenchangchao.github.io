@@ -6,6 +6,25 @@ import { SITE } from '../consts';
 
 const locale = 'zh-Hans';
 const meta = SITE[locale];
+
+const techStack = [
+	{
+		group: '核心环境',
+		items: ['Bun', 'Python', 'Go'],
+	},
+	{
+		group: 'AI 开发',
+		items: ['MCP', 'RAG', '本地大模型', 'Agent Runtime'],
+	},
+	{
+		group: '前端栈',
+		items: ['TypeScript', 'Vue3', 'React', 'Astro'],
+	},
+	{
+		group: '数据底座',
+		items: ['PostgreSQL', 'Redis', 'ETL', 'Automation'],
+	},
+];
 ---
 
 <!doctype html>
@@ -16,27 +35,145 @@ const meta = SITE[locale];
 	<body>
 		<Header locale={locale} />
 
-		<main>
-			<h1>关于我</h1>
+		<main class="about-page" data-pagefind-body>
+			<section class="resume-hero">
+				<p class="eyebrow">Digital resume</p>
+				<h1>关于我</h1>
+				<p class="lead">
+					我是陈常超，一名从数据分析转向独立开发的技术实践者。过去的经验让我习惯从业务数据、流程瓶颈和自动化需求出发，现在我把这些问题意识带入 AI Agent、RAG、本地工具链与全栈应用开发。
+				</p>
+				<p>
+					这个站点是我的技术工作台：记录真实项目里的架构取舍、协议理解、代码实现、调试过程和复盘笔记。相比“展示结果”，我更关心把可复用的方法、工程边界和失败经验留下来。
+				</p>
+			</section>
 
-			<p>
-				你好，我是陈常超。这里是我的个人技术博客，用来记录 AI Agent、数据分析、
-				TypeScript 全栈开发、RAG、自动化报表和个人项目实践。
-			</p>
+			<section class="resume-section" aria-labelledby="tech-stack">
+				<h2 id="tech-stack">技术栈</h2>
+				<div class="stack-grid">
+					{
+						techStack.map((stack) => (
+							<section class="stack-card">
+								<h3>{stack.group}</h3>
+								<div class="badges">
+									{stack.items.map((item) => (
+										<span>{item}</span>
+									))}
+								</div>
+							</section>
+						))
+					}
+				</div>
+			</section>
 
-			<p>
-				我希望把真实项目中的问题、踩坑记录、技术方案和复盘总结沉淀下来，
-				形成一个长期积累的技术作品集。
-			</p>
-
-			<p>
-				GitHub：
-				<a href="https://github.com/chenchangchao" target="_blank">
-					chenchangchao
-				</a>
-			</p>
+			<section class="resume-section site-routing" aria-labelledby="site-routing">
+				<h2 id="site-routing">站点分流</h2>
+				<p>
+					本站仅记录技术与代码。关于物理学探索、博物馆巡游及生活随笔，请访问我的生活主页：
+					<a href="https://chenchangchao.com" target="_blank" rel="noopener noreferrer">
+						chenchangchao.com
+					</a>
+				</p>
+			</section>
 		</main>
 
 		<Footer />
 	</body>
 </html>
+
+<style>
+	.about-page {
+		width: min(var(--container-wide), calc(100% - 2rem));
+	}
+
+	.resume-hero {
+		max-width: 760px;
+		padding-bottom: 3.5rem;
+	}
+
+	.eyebrow {
+		margin-bottom: 0.8rem;
+		color: var(--muted-color);
+		font-size: 0.82rem;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+
+	.lead {
+		color: var(--text-color);
+		font-size: 1.18rem;
+		line-height: 1.8;
+	}
+
+	.resume-hero p:not(.eyebrow),
+	.site-routing p {
+		max-width: 46rem;
+		color: var(--muted-color);
+		line-height: 1.8;
+	}
+
+	.resume-section {
+		padding: 3rem 0;
+		border-top: 1px solid var(--border-color);
+	}
+
+	.resume-section h2 {
+		margin: 0 0 1.5rem;
+		font-size: 1.35rem;
+	}
+
+	.stack-grid {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 1rem;
+	}
+
+	.stack-card {
+		padding: 1.25rem;
+		border: 1px solid var(--border-color);
+		border-radius: 8px;
+		background: var(--surface-bg);
+	}
+
+	.stack-card h3 {
+		margin: 0 0 1rem;
+		font-size: 1rem;
+	}
+
+	.badges {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+
+	.badges span {
+		display: inline-flex;
+		align-items: center;
+		min-height: 30px;
+		padding: 0 0.65rem;
+		border: 1px solid var(--border-color);
+		border-radius: 999px;
+		background: var(--inline-code-bg);
+		color: var(--text-color);
+		font-size: 0.86rem;
+	}
+
+	.site-routing a {
+		font-weight: 700;
+		border-bottom: 1px solid color-mix(in srgb, var(--accent), transparent 62%);
+	}
+
+	.site-routing a:hover {
+		border-bottom-color: var(--accent);
+	}
+
+	@media (max-width: 720px) {
+		.about-page {
+			width: min(var(--container-wide), calc(100% - 1.5rem));
+		}
+
+		.stack-grid {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>

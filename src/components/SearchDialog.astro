@@ -1,0 +1,461 @@
+---
+import type { Locale } from '../consts';
+
+interface Props {
+	locale: Locale;
+}
+
+const { locale } = Astro.props;
+
+const copy = {
+	'zh-Hans': {
+		open: '搜索',
+		label: '搜索文章',
+		placeholder: '搜索 AI Agent、RAG、MCP、TypeScript...',
+		empty: '输入关键词开始搜索。',
+		noResults: '没有找到匹配结果。',
+		loading: '正在搜索...',
+		unavailable: '搜索索引尚未生成。请先运行构建命令生成 Pagefind 索引。',
+		allMode: '全文',
+		titleMode: '标题',
+		close: '关闭搜索',
+	},
+	'en-US': {
+		open: 'Search',
+		label: 'Search posts',
+		placeholder: 'Search AI agents, RAG, MCP, TypeScript...',
+		empty: 'Type a query to search.',
+		noResults: 'No matching results.',
+		loading: 'Searching...',
+		unavailable: 'Search index is not available yet. Run the production build to generate Pagefind.',
+		allMode: 'All',
+		titleMode: 'Titles',
+		close: 'Close search',
+	},
+} as const;
+
+const text = copy[locale];
+---
+
+<button class="search-trigger" type="button" data-search-open aria-haspopup="dialog">
+	<svg viewBox="0 0 24 24" aria-hidden="true">
+		<path
+			fill="none"
+			stroke="currentColor"
+			stroke-linecap="round"
+			stroke-linejoin="round"
+			stroke-width="2"
+			d="m21 21-4.35-4.35m1.35-5.15a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z"
+		></path>
+	</svg>
+	<span>{text.open}</span>
+	<kbd>⌘K</kbd>
+</button>
+
+<div
+	class="search-shell"
+	data-search-shell
+	data-empty={text.empty}
+	data-no-results={text.noResults}
+	data-loading={text.loading}
+	data-unavailable={text.unavailable}
+	hidden
+>
+	<div class="search-backdrop" data-search-close></div>
+	<section class="search-dialog" role="dialog" aria-modal="true" aria-label={text.label}>
+		<div class="search-input-row">
+			<svg viewBox="0 0 24 24" aria-hidden="true">
+				<path
+					fill="none"
+					stroke="currentColor"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					stroke-width="2"
+					d="m21 21-4.35-4.35m1.35-5.15a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z"
+				></path>
+			</svg>
+			<input data-search-input type="search" placeholder={text.placeholder} autocomplete="off" />
+			<button class="search-close" type="button" data-search-close aria-label={text.close}>Esc</button>
+		</div>
+		<div class="search-mode" role="group" aria-label={text.label}>
+			<button type="button" data-search-mode="all" aria-pressed="true">{text.allMode}</button>
+			<button type="button" data-search-mode="title" aria-pressed="false">{text.titleMode}</button>
+		</div>
+		<div class="search-results" data-search-results>
+			<p class="search-state">{text.empty}</p>
+		</div>
+	</section>
+</div>
+
+<script>
+	const shell = document.querySelector('[data-search-shell]');
+	const input = document.querySelector('[data-search-input]');
+	const results = document.querySelector('[data-search-results]');
+	const openButtons = document.querySelectorAll('[data-search-open]');
+	const closeButtons = document.querySelectorAll('[data-search-close]');
+	const modeButtons = document.querySelectorAll('[data-search-mode]');
+	const pagefindPath = '/pagefind/pagefind.js';
+	const messages = {
+		empty: shell?.dataset.empty ?? 'Type a query to search.',
+		noResults: shell?.dataset.noResults ?? 'No matching results.',
+		loading: shell?.dataset.loading ?? 'Searching...',
+		unavailable: shell?.dataset.unavailable ?? 'Search index is not available yet.',
+	};
+	let pagefind;
+	let searchTimer;
+	let searchMode = 'all';
+
+	const setState = (message) => {
+		if (!results) return;
+		results.innerHTML = `<p class="search-state">${message}</p>`;
+	};
+
+	const loadPagefind = async () => {
+		if (pagefind) return pagefind;
+		try {
+			pagefind = await import(/* @vite-ignore */ pagefindPath);
+			await pagefind.options({
+				excerptLength: 28,
+			});
+			return pagefind;
+		} catch {
+			setState(messages.unavailable);
+			return null;
+		}
+	};
+
+	const escapeHtml = (value) =>
+		value
+			.replace(/&/g, '&amp;')
+			.replace(/</g, '&lt;')
+			.replace(/>/g, '&gt;')
+			.replace(/"/g, '&quot;')
+			.replace(/'/g, '&#39;');
+
+	const stripHtml = (value) => {
+		const template = document.createElement('template');
+		template.innerHTML = value;
+		return template.content.textContent ?? '';
+	};
+
+	const highlightTerm = (value, term) => {
+		const escaped = escapeHtml(value);
+		const normalizedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+		if (!normalizedTerm) return escaped;
+		return escaped.replace(new RegExp(`(${normalizedTerm})`, 'gi'), '<mark>$1</mark>');
+	};
+
+	const getPathLabel = (url) => {
+		try {
+			return new URL(url, window.location.origin).pathname;
+		} catch {
+			return url;
+		}
+	};
+
+	const openSearch = async () => {
+		if (!shell || !input) return;
+		shell.hidden = false;
+		document.documentElement.classList.add('search-open');
+		input.focus();
+		await loadPagefind();
+	};
+
+	const closeSearch = () => {
+		if (!shell) return;
+		shell.hidden = true;
+		document.documentElement.classList.remove('search-open');
+	};
+
+	const renderResults = async (query) => {
+		const term = query.trim();
+		if (!term) {
+			setState(messages.empty);
+			return;
+		}
+
+		const search = await loadPagefind();
+		if (!search) return;
+
+		setState(messages.loading);
+		const response = await search.search(term);
+		const resultData = await Promise.all(response.results.slice(0, 16).map((result) => result.data()));
+		const sortedResults = resultData
+			.map((result) => {
+				const title = result.meta?.title ?? result.url;
+				const plainExcerpt = stripHtml(result.excerpt ?? '');
+				const titleMatches = title.toLowerCase().includes(term.toLowerCase());
+				return { ...result, title, plainExcerpt, titleMatches };
+			})
+			.filter((result) => searchMode === 'all' || result.titleMatches)
+			.sort((a, b) => Number(b.titleMatches) - Number(a.titleMatches))
+			.slice(0, 8);
+
+		if (sortedResults.length === 0) {
+			setState(messages.noResults);
+			return;
+		}
+
+		results.innerHTML = sortedResults
+			.map((result) => {
+				const url = result.url;
+				const title = highlightTerm(result.title, term);
+				const excerptSource = result.meta?.description || result.plainExcerpt;
+				const excerpt = highlightTerm(excerptSource.slice(0, 180), term);
+				const path = escapeHtml(getPathLabel(url));
+				return `
+					<a class="search-result" href="${url}">
+						<span class="search-result-title">${title}</span>
+						<span class="search-result-path">${path}</span>
+						<span class="search-result-excerpt">${excerpt}</span>
+					</a>
+				`;
+			})
+			.join('');
+	};
+
+	openButtons.forEach((button) => button.addEventListener('click', openSearch));
+	closeButtons.forEach((button) => button.addEventListener('click', closeSearch));
+	modeButtons.forEach((button) => {
+		button.addEventListener('click', () => {
+			searchMode = button.dataset.searchMode ?? 'all';
+			modeButtons.forEach((modeButton) => {
+				modeButton.setAttribute('aria-pressed', String(modeButton === button));
+			});
+			if (input?.value) renderResults(input.value);
+		});
+	});
+
+	input?.addEventListener('input', (event) => {
+		const query = event.currentTarget.value;
+		window.clearTimeout(searchTimer);
+		searchTimer = window.setTimeout(() => {
+			renderResults(query);
+		}, 160);
+	});
+
+	document.addEventListener('keydown', (event) => {
+		const isSearchShortcut = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k';
+		if (isSearchShortcut) {
+			event.preventDefault();
+			openSearch();
+		}
+		if (event.key === 'Escape') {
+			closeSearch();
+		}
+	});
+</script>
+
+<style>
+	.search-trigger {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.45rem;
+		min-height: 38px;
+		padding: 0 0.75rem;
+		border: 1px solid var(--border-color);
+		border-radius: 8px;
+		background: var(--control-bg);
+		color: var(--text-color);
+		font: inherit;
+		font-size: 0.85rem;
+		line-height: 1;
+		cursor: pointer;
+		transition:
+			color 180ms ease,
+			border-color 180ms ease,
+			background-color 180ms ease;
+	}
+
+	.search-trigger:hover {
+		color: var(--accent);
+		border-color: var(--accent);
+	}
+
+	.search-trigger svg {
+		width: 18px;
+		height: 18px;
+	}
+
+	.search-trigger kbd {
+		padding: 0.2rem 0.35rem;
+		border: 1px solid var(--border-color);
+		border-radius: 5px;
+		color: var(--muted-color);
+		font-size: 0.72rem;
+		line-height: 1;
+	}
+
+	.search-shell[hidden] {
+		display: none;
+	}
+
+	.search-shell {
+		position: fixed;
+		inset: 0;
+		z-index: 100;
+		display: grid;
+		place-items: start center;
+		padding: 12vh 1rem 1rem;
+	}
+
+	.search-backdrop {
+		position: absolute;
+		inset: 0;
+		background: rgba(0, 0, 0, 0.42);
+		backdrop-filter: blur(8px);
+	}
+
+	.search-dialog {
+		position: relative;
+		width: min(680px, 100%);
+		overflow: hidden;
+		border: 1px solid var(--border-color);
+		border-radius: 12px;
+		background: var(--surface-bg);
+		box-shadow: var(--box-shadow);
+	}
+
+	.search-input-row {
+		display: grid;
+		grid-template-columns: 22px 1fr auto;
+		gap: 0.75rem;
+		align-items: center;
+		padding: 1rem;
+		border-bottom: 1px solid var(--border-color);
+	}
+
+	.search-mode {
+		display: flex;
+		gap: 0.5rem;
+		padding: 0.75rem 1rem;
+		border-bottom: 1px solid var(--border-color);
+		background: color-mix(in srgb, var(--surface-bg), var(--inline-code-bg) 48%);
+	}
+
+	.search-mode button {
+		min-height: 30px;
+		padding: 0 0.75rem;
+		border: 1px solid var(--border-color);
+		border-radius: 999px;
+		background: var(--surface-bg);
+		color: var(--muted-color);
+		font: inherit;
+		font-size: 0.82rem;
+		cursor: pointer;
+	}
+
+	.search-mode button[aria-pressed='true'] {
+		border-color: var(--heading-color);
+		background: var(--heading-color);
+		color: var(--page-bg);
+	}
+
+	.search-input-row svg {
+		width: 22px;
+		height: 22px;
+		color: var(--muted-color);
+	}
+
+	.search-input-row input {
+		min-width: 0;
+		border: 0;
+		outline: 0;
+		background: transparent;
+		color: var(--text-color);
+		font: inherit;
+		font-size: 1rem;
+	}
+
+	.search-close {
+		min-height: 32px;
+		padding: 0 0.55rem;
+		border: 1px solid var(--border-color);
+		border-radius: 7px;
+		background: var(--control-bg);
+		color: var(--muted-color);
+		font: inherit;
+		font-size: 0.78rem;
+		cursor: pointer;
+	}
+
+	.search-results {
+		max-height: min(56vh, 520px);
+		overflow-y: auto;
+		padding: 0.5rem;
+	}
+
+	.search-state {
+		margin: 0;
+		padding: 1rem;
+		color: var(--muted-color);
+		font-size: 0.95rem;
+	}
+
+	:global(.search-result) {
+		display: grid;
+		gap: 0.38rem;
+		padding: 0.95rem;
+		border-radius: 8px;
+		color: var(--text-color);
+		text-decoration: none;
+	}
+
+	:global(.search-result + .search-result) {
+		border-top: 1px solid var(--border-color);
+	}
+
+	:global(.search-result:hover) {
+		background: var(--inline-code-bg);
+		color: var(--text-color);
+	}
+
+	:global(.search-result-title) {
+		color: var(--heading-color);
+		font-weight: 700;
+		font-size: 1rem;
+		line-height: 1.35;
+	}
+
+	:global(.search-result-path) {
+		color: var(--muted-color);
+		font-size: 0.78rem;
+		line-height: 1.3;
+	}
+
+	:global(.search-result-excerpt) {
+		display: -webkit-box;
+		overflow: hidden;
+		max-height: 2.8em;
+		color: var(--muted-color);
+		font-size: 0.9rem;
+		line-height: 1.55;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 2;
+	}
+
+	:global(.search-result mark) {
+		padding: 0.05rem 0.18rem;
+		border-radius: 4px;
+		background: color-mix(in srgb, var(--accent), transparent 82%);
+		color: var(--heading-color);
+		font-weight: 700;
+	}
+
+	:global(html.search-open) {
+		overflow: hidden;
+	}
+
+	@media (max-width: 820px) {
+		.search-trigger {
+			min-height: 34px;
+			padding: 0 0.55rem;
+			font-size: 0.8rem;
+		}
+
+		.search-trigger kbd {
+			display: none;
+		}
+	}
+</style>

@@ -6,6 +6,25 @@ import { SITE } from '../../consts';
 
 const locale = 'en-US';
 const meta = SITE[locale];
+
+const techStack = [
+	{
+		group: 'Core Runtime',
+		items: ['Bun', 'Python', 'Go'],
+	},
+	{
+		group: 'AI Development',
+		items: ['MCP', 'RAG', 'Local LLMs', 'Agent Runtime'],
+	},
+	{
+		group: 'Frontend',
+		items: ['TypeScript', 'Vue3', 'React', 'Astro'],
+	},
+	{
+		group: 'Data Foundation',
+		items: ['PostgreSQL', 'Redis', 'ETL', 'Automation'],
+	},
+];
 ---
 
 <!doctype html>
@@ -16,28 +35,146 @@ const meta = SITE[locale];
 	<body>
 		<Header locale={locale} />
 
-		<main>
-			<h1>About Me</h1>
+		<main class="about-page" data-pagefind-body>
+			<section class="resume-hero">
+				<p class="eyebrow">Digital resume</p>
+				<h1>About Me</h1>
+				<p class="lead">
+					I am Changchao Chen, a builder who moved from data analytics into independent software development. My data background keeps me close to business workflows, automation bottlenecks, and measurable outcomes; my current focus is AI agents, RAG, local toolchains, and full-stack applications.
+				</p>
+				<p>
+					This site is my technical workbench: architecture notes, protocol deep dives, code experiments, debugging records, and project retrospectives from real practice.
+				</p>
+			</section>
 
-			<p>
-				Hi, I am Changchao Chen. This is my personal tech blog for notes on
-				AI agents, data analytics, TypeScript full-stack development, RAG,
-				automation, and personal engineering projects.
-			</p>
+			<section class="resume-section" aria-labelledby="tech-stack">
+				<h2 id="tech-stack">Tech Stack</h2>
+				<div class="stack-grid">
+					{
+						techStack.map((stack) => (
+							<section class="stack-card">
+								<h3>{stack.group}</h3>
+								<div class="badges">
+									{stack.items.map((item) => (
+										<span>{item}</span>
+									))}
+								</div>
+							</section>
+						))
+					}
+				</div>
+			</section>
 
-			<p>
-				I use this site as a long-term archive for technical learning,
-				project experience, problem-solving notes, and portfolio building.
-			</p>
-
-			<p>
-				GitHub:
-				<a href="https://github.com/chenchangchao" target="_blank">
-					chenchangchao
-				</a>
-			</p>
+			<section class="resume-section site-routing" aria-labelledby="site-routing">
+				<h2 id="site-routing">Site Routing</h2>
+				<p>
+					This site is only for technology and code. For physics notes, museum trips,
+					and life essays, visit my personal homepage:
+					<a href="https://chenchangchao.com" target="_blank" rel="noopener noreferrer">
+						chenchangchao.com
+					</a>
+				</p>
+			</section>
 		</main>
 
 		<Footer />
 	</body>
 </html>
+
+<style>
+	.about-page {
+		width: min(var(--container-wide), calc(100% - 2rem));
+	}
+
+	.resume-hero {
+		max-width: 760px;
+		padding-bottom: 3.5rem;
+	}
+
+	.eyebrow {
+		margin-bottom: 0.8rem;
+		color: var(--muted-color);
+		font-size: 0.82rem;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+
+	.lead {
+		color: var(--text-color);
+		font-size: 1.18rem;
+		line-height: 1.8;
+	}
+
+	.resume-hero p:not(.eyebrow),
+	.site-routing p {
+		max-width: 46rem;
+		color: var(--muted-color);
+		line-height: 1.8;
+	}
+
+	.resume-section {
+		padding: 3rem 0;
+		border-top: 1px solid var(--border-color);
+	}
+
+	.resume-section h2 {
+		margin: 0 0 1.5rem;
+		font-size: 1.35rem;
+	}
+
+	.stack-grid {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 1rem;
+	}
+
+	.stack-card {
+		padding: 1.25rem;
+		border: 1px solid var(--border-color);
+		border-radius: 8px;
+		background: var(--surface-bg);
+	}
+
+	.stack-card h3 {
+		margin: 0 0 1rem;
+		font-size: 1rem;
+	}
+
+	.badges {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+
+	.badges span {
+		display: inline-flex;
+		align-items: center;
+		min-height: 30px;
+		padding: 0 0.65rem;
+		border: 1px solid var(--border-color);
+		border-radius: 999px;
+		background: var(--inline-code-bg);
+		color: var(--text-color);
+		font-size: 0.86rem;
+	}
+
+	.site-routing a {
+		font-weight: 700;
+		border-bottom: 1px solid color-mix(in srgb, var(--accent), transparent 62%);
+	}
+
+	.site-routing a:hover {
+		border-bottom-color: var(--accent);
+	}
+
+	@media (max-width: 720px) {
+		.about-page {
+			width: min(var(--container-wide), calc(100% - 1.5rem));
+		}
+
+		.stack-grid {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>

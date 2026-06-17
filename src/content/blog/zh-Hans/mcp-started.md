@@ -1,11 +1,10 @@
 ---
 title: MCP (Model Context Protocol) 底层原理与实战开发指南
-pubDate: 2026-04-29
+pubDate: 2026-06-17
 tags: [MCP, AI, 全栈开发, Node.js, Python]
-description: "主要来自渡一教育袁老师的公开课程整理"
+description: 根据渡一教育袁老师的公开课程整理
 ---
 
-# MCP (Model Context Protocol) 底层原理与实战开发指南
 
 本指南从操作系统的进程间通信（IPC）出发，逐步推演 JSON-RPC 协议，并最终落地到现代 AI 基础设施 MCP（Model Context Protocol，模型上下文协议）的核心规范与开发实践。
 
@@ -203,7 +202,233 @@ MCP Server 常见能力包括：
 
 最常见的入门场景是开发一个 Tool，因为它最像传统后端接口：定义名称、描述、输入参数 schema，然后返回结构化结果。
 
-## 五、实战：Node.js / TypeScript 版本
+## 五、实战：原生Node.js / JaveScript 
+- 原生js版本演示，不依赖任何框架
+
+```js
+// client.js
+// 向服务端发送消息并且通过stdout获取响应
+
+import { spawn } from 'child_process';
+
+// 直接输出当前node进程的PID
+console.log('✅ 当前执行client1.js的node进程PID：', process.pid);
+// 创建子进程，启动服务端   
+const child = spawn('node', ['resources/server3.js']); // 启动服务端
+
+//监听服务端响应
+
+child.stdout.on('data', (data) => {
+    console.log(`stdout: ${data.toString()}`);
+})
+
+// 发送测试消息
+const messages = ['生命有意义吗', '宇宙有尽头吗','再见'];
+// child.stdin.write('Hello, server!');
+// child.stdin.end();
+messages.forEach((msg,index) => {
+    setTimeout(() => {
+        console.log(`发送消息: ${msg}`);
+        child.stdin.write(msg + '\n'); // 发送消息
+    }, index * 1000);// 每隔1秒发送一条消息
+});
+```
+```js
+// server1.js,
+// 在终端执行node server1.js
+process.stdin.on('data', (data) => {}) // 监听标准输入
+process.stdout.write('hello world\n');// 向标准输出写入数据
+
+// 新增：直接输出当前node进程的PID
+console.log('✅ 当前执行server1.js的node进程PID：', process.pid);
+```
+- 子进程，可以直接输出当前node进程的PID，也可以通过stdout获取响应
+
+```js
+// server2.js
+// 直接输出当前node进程的PID
+console.log('✅ 当前执行server2.js的node进程PID：', process.pid);
+process.stdin.on('data', (data) => {
+    const res = `回复: ${data.toString().trim()}\n`;
+    process.stdout.write(res);
+}) // 监听标准输入
+```
+
+```js
+// server3.js
+// 直接输出当前node进程的PID
+console.log('✅ 当前执行server3.js的node进程PID：', process.pid);
+process.stdout.write('请输入内容：\n'); // 向标准输出写入内容
+process.stdin.setEncoding('utf8');// 设置标准输入的编码格式为utf8，默认是buffer,需要转换成字符串
+process.stdin.on('data', (data) => {
+    data = data.toString().trim()
+    .replace(/[??]/g, '')
+    .replace(/我/g, '你')
+    .replace(/你/g, '我')
+    .replace(/吗/g, '');
+    const res = `AI: ${data}\n`;
+    process.stdout.write(res);
+}) // 监听标准输入
+```
+
+```js
+// server4.js
+import * as utils from './utils.js';
+
+process.stdin.on('data', (data) => {
+    const req = JSON.parse(data.toString());
+    const funcName = req.method;
+    const params = req.params;
+    const result = utils[funcName](params);
+    const res = {
+        jsonrpc: '2.0',
+        result,
+        id: req.id,
+    }
+    process.stdout.write(JSON.stringify(res) + '\n');
+})
+```
+
+```js
+// server5.js
+import utils, { tools } from './utils2.js';
+process.stdin.on('data', (data) => {
+    const req = JSON.parse(data.toString()); // console.log(req);
+    let result;
+    if (req.method === 'tools/call') {
+        result = tools[req.params.funcName](req.params.arguments); // console.log(result);
+    } else if (req.method in utils) {
+        result = utils[req.params.funcName](req.params); // console.log(result);
+    } else {
+        result = '未知方法';
+        return;
+    }
+    const res = {
+        jsonrpc: '2.0',
+        result,
+        id: req.id,
+    }
+    process.stdout.write(JSON.stringify(res) + '\n');
+})
+```
+```js
+ // utils.js
+import { readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+
+export function readFile({ path }) { 
+    return readFileSync(path, 'utf8');
+}
+
+export function writeFile({ path, content }) {
+    // writeFileSync(path, content, 'utf8');
+    try {
+        writeFileSync(path, content, 'utf8');
+        return true;
+    } catch (error) {
+        console.log(error);
+        return false;
+    }
+}
+
+export function getFiles({ path }) {
+    try {
+        const stats = statSync(path);
+
+        if (stats.isDirectory()) {
+            return readdirSync(path);
+        }
+
+        return {
+            path,
+            isFile: stats.isFile(),
+            isDirectory: stats.isDirectory(),
+            size: stats.size,
+        };
+    } catch (error) {
+        console.error(error);
+        return false;
+    }
+}
+
+export function sum({ a, b }) {
+    return a + b;
+}
+```
+
+```js
+// utils2.js
+import fs from "node:fs";
+
+export const tools = {
+    initialize() {
+        return {
+            capabilities: {},
+            serverInfo: {
+                name: 'Example Server',
+                title: 'Example Server Display Name',
+                description: 'This is an example server that provides various utilities.',
+                version: '1.0.0',
+            },
+            instructions: 'Optional instructions for the user.'
+        };
+    },
+    sum({ a, b }) {
+        return {
+            content: [
+                {
+                    type: 'text',
+                    text: `${a} + ${b} = ${a + b}`
+                }
+            ]
+        };
+    },
+    createFile({ fileName, content }) {
+        try {
+            fs.writeFileSync(fileName, content, 'utf8');
+            return true;
+        } catch (error) {
+            console.log(error);
+            return false;
+        }
+    },
+};
+
+export default {
+    initialize() {
+        return {};
+    }
+};
+
+```
+
+```js
+// utils3.js
+import z from 'zod'; // 导入zod库
+export default {
+    {
+    method:'',    
+    title:'加法',    
+    description:'计算两个数字的和',
+    inputSchema:{
+        a：z.number().description('第一个数字'),
+        b：z.number().description('第二个数字'),
+    },
+    },
+    ({a,b})=>{
+        return {
+            content:[
+                {
+                    type:'text',
+                    text:`${a} + ${b} = ${a+b}`
+                }
+            ]
+        }
+    }
+}
+```
+
+
+## 六、实战：Node.js / TypeScript 版本
 
 ### 1. 安装依赖
 
@@ -212,6 +437,7 @@ npm init -y
 npm install @modelcontextprotocol/sdk zod
 npm install -D typescript tsx @types/node
 ```
+
 
 ### 2. 创建 `server.ts`
 
@@ -265,7 +491,7 @@ console.error("debug: server started");
 
 不要在 stdio 模式下使用 `console.log` 打印调试信息，因为 `stdout` 是 JSON-RPC 协议通道。
 
-## 六、实战：Python 版本
+## 七、实战：Python 版本
 
 ### 1. 安装依赖
 
@@ -321,7 +547,7 @@ python server.py
 uv run python server.py
 ```
 
-## 七、宿主配置示例
+## 八、宿主配置示例
 
 不同客户端的配置文件位置略有差异，但核心配置都是声明 MCP Server 的启动命令与参数。
 
@@ -377,7 +603,7 @@ uv run python server.py
 - 如果使用 `npx`，可以按需要加入 `-y`，例如 `["-y", "tsx", "/absolute/path/to/server.ts"]`。
 - 如果客户端支持 `env` 字段，可以把密钥、数据库地址等敏感配置放到环境变量里。
 
-## 八、调试与验证
+## 九、调试与验证
 
 ### 1. 使用 MCP Inspector
 
@@ -405,7 +631,7 @@ logging.basicConfig(level=logging.INFO)
 logging.info("server started")
 ```
 
-## 九、行业项目落地案例
+## 十、行业项目落地案例
 
 掌握 MCP 后，可以将它作为 LLM 工具链中的核心模块灵活复用。
 
@@ -423,7 +649,7 @@ logging.info("server started")
 - 审计结果结构化，便于模型进一步解释、生成修复计划或打开 Pull Request。
 - 可接入 Cursor、Claude Desktop、VS Code，也可以作为 LangChain、Dify 等平台下的工具服务。
 
-## 十、官方资源导航
+## 十一、官方资源导航
 
 - MCP 官方文档：https://modelcontextprotocol.io/docs
 - MCP TypeScript SDK：https://github.com/modelcontextprotocol/typescript-sdk
