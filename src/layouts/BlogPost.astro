@@ -178,6 +178,36 @@ const navigationLabels = {
 				max-width: 100%;
 				border-radius: 10px;
 			}
+			.prose :global(table) {
+				width: 100%;
+				max-width: 100%;
+				margin: 2rem 0;
+				border-collapse: collapse;
+				border-spacing: 0;
+				font-size: 0.95rem;
+				line-height: 1.65;
+			}
+			.prose :global(thead) {
+				background: var(--inline-code-bg);
+			}
+			.prose :global(th),
+			.prose :global(td) {
+				min-width: 8rem;
+				padding: 0.85rem 1rem;
+				border: 1px solid var(--border-color);
+				text-align: left;
+				vertical-align: top;
+			}
+			.prose :global(th) {
+				color: var(--heading-color);
+				font-weight: 700;
+			}
+			.prose :global(td) {
+				color: var(--text-color);
+			}
+			.prose :global(tbody tr:nth-child(even)) {
+				background: color-mix(in srgb, var(--surface-bg), var(--inline-code-bg) 42%);
+			}
 			.prose :global(pre) {
 				margin: 2rem 0;
 				padding: 1.25rem;
@@ -270,6 +300,10 @@ const navigationLabels = {
 				}
 				.post-nav-card.next {
 					text-align: left;
+				}
+				.prose :global(table) {
+					display: block;
+					overflow-x: auto;
 				}
 			}
 			@media (max-width: 1120px) {
