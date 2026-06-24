@@ -9,7 +9,7 @@ tags: ["AI Agent", "系统架构", "RAG", "LLM", "Memory", "LangChain", "LangGra
 
 > **本文说明**：公开资料不会完整披露 ChatGPT 等商业系统的内部实现，因此本文不是“复刻某个闭源产品源码”，而是结合主流框架和工业实践，总结一套可落地的 Agent Memory 架构。
 
-![Agent Memory 四层架构](../../../assets/agent-memory-4-layer-architecture.svg)
+![Agent Memory 四层架构](/images/agent-memory-architecture/agent-memory-4-layer-architecture.svg)
 ## 1. 为什么“所有历史都进向量库”会翻车？
 
 在传统知识库问答中，向量数据库很强：你问“怎么处理退款争议”，它能召回语义相近的历史工单、政策文档、案例总结。
@@ -117,7 +117,7 @@ SET value = excluded.value,
 摘要记忆不是事实库，也不是向量库。它更像“会议纪要”：保留上下文，但不保证每个细节都精确。比如：
 
 ```text
-最近用户正在准备智慧芽 AI Agent 岗位面试，重点补充 Patent FTO Agent Demo、VOC Agent 项目和个人网站项目页。
+最近用户正在准备AWS AI Agent 岗位面试，重点补充 Patent FTO Agent Demo、VOC Agent 项目和个人网站项目页。
 ```
 
 ### Layer 4：Semantic / Episodic Memory，语义经验检索
@@ -138,7 +138,7 @@ SET value = excluded.value,
 
 记忆写入比记忆读取更危险。读取错了只是回答不准；写错了会污染未来很多轮对话。
 
-![Agent Memory 写入链路](../../../assets/agent-memory-write-pipeline.svg)
+![Agent Memory 写入链路](/images/agent-memory-architecture/agent-memory-write-pipeline.svg)
 
 一个稳妥的写入链路应该是：
 
@@ -153,13 +153,13 @@ SET value = excluded.value,
 
 > 热路径只写少量高置信事实；复杂记忆合并放到后台任务里做。
 
-比如用户说：“我准备投智慧芽，全栈 Agent 岗。”
+比如用户说：“我准备投AWS，全栈 Agent 岗。”
 
 热路径可以写入：
 
 ```json
 {
-  "career_target_company": "智慧芽",
+  "career_target_company": "AWS",
   "career_target_role": "AI Agent 全栈工程师"
 }
 ```
@@ -167,14 +167,14 @@ SET value = excluded.value,
 但不要立刻把整段对话都塞进长期记忆。更合理的是后台异步总结：
 
 ```text
-用户正在准备智慧芽 AI Agent 岗位，关注 Patent FTO、RAG、Agent Workflow、Demo 和简历优化。
+用户正在准备AWS AI Agent 岗位，关注 Patent FTO、RAG、Agent Workflow、Demo 和简历优化。
 ```
 
 ## 4. 召回链路：回答前只取“最小必要记忆”
 
 很多 Agent 失败不是因为没有记忆，而是因为把太多无关记忆塞进 Prompt。
 
-![Agent Memory 召回链路](../../../assets/agent-memory-recall-pipeline.svg)
+![Agent Memory 召回链路](/images/agent-memory-architecture/agent-memory-recall-pipeline.svg)
 
 一个靠谱的召回链路通常是：
 
@@ -188,11 +188,11 @@ SET value = excluded.value,
 可以把召回想象成一个 Router：
 
 ```text
-用户问：“我现在投智慧芽岗位，简历怎么改？”
+用户问：“我现在投AWS岗位，简历怎么改？”
 
 Memory Router：
 - 需要 career_target、tech_stack、recent_resume_version
-- 需要最近关于智慧芽岗位的上下文摘要
+- 需要最近关于AWS岗位的上下文摘要
 - 不需要用户家庭信息、健康信息、旧的相亲聊天记录
 ```
 
@@ -840,7 +840,7 @@ OpenAI Agents SDK 提供了 Sessions，用来在多轮 agent run 之间自动维
 
 ## 9. OpenClaw 与 Hermes Agent：从 Memory 到 Skills
 
-![主流 Agent Memory 模式对比](../../../assets/agent-memory-framework-comparison.svg)
+![主流 Agent Memory 模式对比](/images/agent-memory-architecture/agent-memory-framework-comparison.svg)
 
 你提到的 OpenClaw / Hermes 很适合放进这篇文章里，因为它们代表了个人 Agent 的一个新趋势：**记忆不只是“记住用户说过什么”，而是让 Agent 逐步形成自己的工作流、技能和长期上下文。**
 
