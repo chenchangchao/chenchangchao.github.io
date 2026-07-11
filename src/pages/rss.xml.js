@@ -3,16 +3,19 @@ import rss from '@astrojs/rss';
 import { getPostHref, getPostLocale, SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 
 export async function GET(context) {
-	const posts = (await getCollection('blog')).filter(
-		(post) => getPostLocale(post.id) === 'zh-Hans' && post.id.toLowerCase().startsWith('zh-hans/'),
+	const posts = (await getCollection('blog')).sort(
+		(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
 	);
+
 	return rss({
 		title: SITE_TITLE,
 		description: SITE_DESCRIPTION,
 		site: context.site,
 		items: posts.map((post) => ({
-			...post.data,
-			link: getPostHref('zh-Hans', post.id),
+			title: post.data.title,
+			description: post.data.description,
+			pubDate: post.data.pubDate,
+			link: getPostHref(getPostLocale(post.id), post.id),
 		})),
 	});
 }
